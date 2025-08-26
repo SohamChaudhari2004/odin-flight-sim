@@ -90,9 +90,13 @@ All colors MUST be HSL. Cosmic backgrounds with bright data displays.
     @apply border-border;
   }
 
-  body {
-    @apply bg-background text-foreground overflow-hidden;
+  html, body {
+    @apply bg-background text-foreground;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    height: 100vh;
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
   }
   
   /* Mission control typography */

@@ -5,6 +5,7 @@ import HazardPanel from '@/components/HazardPanel';
 import MissionLogs from '@/components/MissionLogs';
 import ControlPanel from '@/components/ControlPanel';
 import MetricsDashboard from '@/components/MetricsDashboard';
+import SimulationGraph3D from '@/components/SimulationGraph3D';
 import { Badge } from '@/components/ui/badge';
 import { Satellite, AlertTriangle, Activity } from 'lucide-react';
 import type { Hazard, MissionLog } from '@/data/missionData';
@@ -209,9 +210,14 @@ const Index = () => {
             />
           </div>
           
-          {/* Metrics Dashboard - Bottom Center */}
-          <div className="col-span-3 row-span-4">
+          {/* Metrics Dashboard - Bottom Left Center */}
+          <div className="col-span-2 row-span-4">
             <MetricsDashboard activeTrajectory={activeTrajectory} />
+          </div>
+          
+          {/* 3D Simulation Graph - Bottom Right Center */}
+          <div className="col-span-1 row-span-4">
+            <SimulationGraph3D activeTrajectory={activeTrajectory} />
           </div>
         </div>
       </div>

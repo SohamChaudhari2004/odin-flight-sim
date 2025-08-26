@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import cosmicBackground from '@/assets/cosmic-background.jpg';
 import TrajectoryView3D from '@/components/TrajectoryView3D';
@@ -115,38 +116,36 @@ const Index = () => {
   }, [activeTrajectory]);
 
   return (
-    <div 
-      className="min-h-screen bg-gradient-cosmic relative overflow-hidden"
-      style={{
-        backgroundImage: `url(${cosmicBackground})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundAttachment: 'fixed'
-      }}
-    >
-      {/* Cosmic overlay */}
+    <div className="h-screen w-screen bg-gradient-cosmic relative overflow-hidden">
+      {/* Cosmic background */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center bg-fixed opacity-30"
+        style={{
+          backgroundImage: `url(${cosmicBackground})`,
+        }}
+      />
       <div className="absolute inset-0 bg-background/80" />
       
       {/* Header */}
-      <header className="relative z-10 bg-card/90 backdrop-blur-sm border-b border-border">
-        <div className="px-6 py-4">
+      <header className="relative z-10 bg-card/90 backdrop-blur-sm border-b border-border shrink-0">
+        <div className="px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
-                <Satellite className="w-8 h-8 text-primary glow-primary" />
+                <Satellite className="w-6 h-6 text-primary glow-primary" />
                 <div>
-                  <h1 className="text-2xl font-bold text-foreground">ODIN</h1>
-                  <p className="text-sm text-muted-foreground font-mono-mission">
+                  <h1 className="text-xl font-bold text-foreground">ODIN</h1>
+                  <p className="text-xs text-muted-foreground font-mono-mission">
                     Autonomous Earth–Moon Mission Planner
                   </p>
                 </div>
               </div>
             </div>
             
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-3">
               <div className="flex items-center space-x-2">
                 <Activity className="w-4 h-4 text-primary" />
-                <Badge variant="outline" className="font-mono-mission">
+                <Badge variant="outline" className="font-mono-mission text-xs">
                   T+72:16:23
                 </Badge>
               </div>
@@ -157,11 +156,11 @@ const Index = () => {
                   hazardStatus === 'warning' ? 'bg-warning animate-pulse' :
                   'bg-accent glow-success'
                 }`} />
-                <Badge className={
+                <Badge className={`text-xs ${
                   hazardStatus === 'critical' ? 'bg-destructive text-destructive-foreground' :
                   hazardStatus === 'warning' ? 'bg-warning text-warning-foreground' :
                   'bg-accent text-accent-foreground'
-                }>
+                }`}>
                   {hazardStatus === 'critical' ? 'CRITICAL' :
                    hazardStatus === 'warning' ? 'WARNING' : 'NOMINAL'}
                 </Badge>
@@ -178,46 +177,55 @@ const Index = () => {
       </header>
 
       {/* Main Interface */}
-      <div className="relative z-10 h-[calc(100vh-80px)] p-6">
-        <div className="grid grid-cols-12 grid-rows-12 gap-4 h-full">
-          {/* 3D Trajectory View - Main Center */}
-          <div className="col-span-7 row-span-8 bg-card/90 backdrop-blur-sm rounded-lg border border-border overflow-hidden">
-            <TrajectoryView3D
-              activeTrajectory={activeTrajectory}
-              onTrajectorySelect={handleTrajectorySelect}
-            />
+      <div className="relative z-10 flex-1 p-4 overflow-hidden">
+        <div className="h-full grid grid-cols-12 gap-3">
+          {/* Left Column - Controls and Metrics */}
+          <div className="col-span-3 flex flex-col gap-3 overflow-hidden">
+            {/* Control Panel */}
+            <div className="flex-1 min-h-0">
+              <ControlPanel
+                isSimulationRunning={isSimulationRunning}
+                onPlaySimulation={handlePlaySimulation}
+                onPauseSimulation={handlePauseSimulation}
+                onResetSimulation={handleResetSimulation}
+                onInjectHazard={handleInjectHazard}
+                onRecalculateRoute={handleRecalculateRoute}
+              />
+            </div>
+            
+            {/* Metrics Dashboard */}
+            <div className="flex-1 min-h-0">
+              <MetricsDashboard activeTrajectory={activeTrajectory} />
+            </div>
           </div>
           
-          {/* Hazard Detection Panel - Top Right */}
-          <div className="col-span-5 row-span-6">
-            <HazardPanel onHazardInject={handleHazardInject} />
+          {/* Center Column - 3D Views */}
+          <div className="col-span-6 flex flex-col gap-3 overflow-hidden">
+            {/* 3D Trajectory View */}
+            <div className="flex-1 min-h-0 bg-card/90 backdrop-blur-sm rounded-lg border border-border overflow-hidden">
+              <TrajectoryView3D
+                activeTrajectory={activeTrajectory}
+                onTrajectorySelect={handleTrajectorySelect}
+              />
+            </div>
+            
+            {/* 3D Simulation Graph */}
+            <div className="h-64 bg-card/90 backdrop-blur-sm rounded-lg border border-border overflow-hidden">
+              <SimulationGraph3D activeTrajectory={activeTrajectory} />
+            </div>
           </div>
           
-          {/* Mission Logs - Bottom Right */}
-          <div className="col-span-5 row-span-6">
-            <MissionLogs newLogs={newLogs} />
-          </div>
-          
-          {/* Control Panel - Bottom Left */}
-          <div className="col-span-4 row-span-4">
-            <ControlPanel
-              isSimulationRunning={isSimulationRunning}
-              onPlaySimulation={handlePlaySimulation}
-              onPauseSimulation={handlePauseSimulation}
-              onResetSimulation={handleResetSimulation}
-              onInjectHazard={handleInjectHazard}
-              onRecalculateRoute={handleRecalculateRoute}
-            />
-          </div>
-          
-          {/* Metrics Dashboard - Bottom Left Center */}
-          <div className="col-span-2 row-span-4">
-            <MetricsDashboard activeTrajectory={activeTrajectory} />
-          </div>
-          
-          {/* 3D Simulation Graph - Bottom Right Center */}
-          <div className="col-span-1 row-span-4">
-            <SimulationGraph3D activeTrajectory={activeTrajectory} />
+          {/* Right Column - Hazards and Logs */}
+          <div className="col-span-3 flex flex-col gap-3 overflow-hidden">
+            {/* Hazard Detection Panel */}
+            <div className="flex-1 min-h-0">
+              <HazardPanel onHazardInject={handleHazardInject} />
+            </div>
+            
+            {/* Mission Logs */}
+            <div className="flex-1 min-h-0">
+              <MissionLogs newLogs={newLogs} />
+            </div>
           </div>
         </div>
       </div>

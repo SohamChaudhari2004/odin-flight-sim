@@ -89,17 +89,17 @@ export default function MetricsDashboard({ activeTrajectory }: MetricsDashboardP
   };
 
   return (
-    <Card className="h-full bg-card border-border">
-      <div className="p-4 border-b border-border">
-        <h2 className="text-lg font-bold text-foreground">DECISION METRICS</h2>
-        <p className="text-xs text-muted-foreground font-mono-mission">
-          Real-time trajectory analysis and optimization parameters
+    <Card className="h-full bg-card border-border flex flex-col overflow-hidden">
+      <div className="p-3 border-b border-border shrink-0">
+        <h2 className="text-sm font-bold text-foreground">DECISION METRICS</h2>
+        <p className="text-xs text-muted-foreground font-mono-mission truncate">
+          Real-time trajectory analysis
         </p>
       </div>
 
-      <div className="p-4 space-y-4">
+      <div className="flex-1 p-3 space-y-3 overflow-y-auto">
         {/* Key Metrics Grid */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-2">
           {metrics.map((metric) => {
             const IconComponent = metric.icon;
             const TrendIcon = getTrendIcon(metric.trend);
@@ -107,27 +107,27 @@ export default function MetricsDashboard({ activeTrajectory }: MetricsDashboardP
             return (
               <div
                 key={metric.id}
-                className={`bg-muted/50 rounded-lg p-3 border transition-all hover:bg-muted ${
+                className={`bg-muted/50 rounded p-2 border transition-all hover:bg-muted min-h-0 ${
                   metric.status === 'critical' ? 'border-destructive glow-hazard' :
                   metric.status === 'warning' ? 'border-warning' :
                   'border-border'
                 }`}
               >
-                <div className="flex items-center justify-between mb-2">
-                  <IconComponent className={`w-4 h-4 ${getStatusColor(metric.status)}`} />
-                  <TrendIcon className={`w-3 h-3 ${getTrendColor(metric.trend, metric.status)}`} />
+                <div className="flex items-center justify-between mb-1">
+                  <IconComponent className={`w-3 h-3 ${getStatusColor(metric.status)}`} />
+                  <TrendIcon className={`w-2 h-2 ${getTrendColor(metric.trend, metric.status)}`} />
                 </div>
                 
                 <div className="space-y-1">
-                  <p className="text-xs font-mono-mission text-muted-foreground">
+                  <p className="text-xs font-mono-mission text-muted-foreground truncate">
                     {metric.label}
                   </p>
-                  <p className={`text-lg font-bold font-mono-mission ${getStatusColor(metric.status)}`}>
+                  <div className={`text-sm font-bold font-mono-mission ${getStatusColor(metric.status)}`}>
                     {metric.value.toLocaleString()}
                     <span className="text-xs ml-1 text-muted-foreground">
                       {metric.unit}
                     </span>
-                  </p>
+                  </div>
                 </div>
               </div>
             );
@@ -135,64 +135,59 @@ export default function MetricsDashboard({ activeTrajectory }: MetricsDashboardP
         </div>
 
         {/* Mission Progress */}
-        <div className="space-y-3">
+        <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-mono-mission text-muted-foreground">Mission Progress</span>
-            <span className="text-sm font-mono-mission text-primary">
+            <span className="text-xs font-mono-mission text-muted-foreground">Mission Progress</span>
+            <span className="text-xs font-mono-mission text-primary">
               {currentMissionStats.missionElapsedTime}
             </span>
           </div>
-          <Progress value={35} className="h-2" />
-          <div className="flex justify-between text-xs font-mono-mission text-muted-foreground">
-            <span>Launch</span>
-            <span>TLI</span>
-            <span>Lunar Orbit</span>
-            <span>Landing</span>
+          <Progress value={35} className="h-1" />
+          <div className="grid grid-cols-4 gap-1 text-xs font-mono-mission text-muted-foreground">
+            <span className="truncate">Launch</span>
+            <span className="truncate">TLI</span>
+            <span className="truncate">Orbit</span>
+            <span className="truncate">Land</span>
           </div>
         </div>
 
         {/* Fuel Status */}
-        <div className="space-y-3">
+        <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-mono-mission text-muted-foreground">Fuel Remaining</span>
-            <span className="text-sm font-mono-mission text-accent">
+            <span className="text-xs font-mono-mission text-muted-foreground">Fuel</span>
+            <span className="text-xs font-mono-mission text-accent">
               {currentMissionStats.fuelRemaining}%
             </span>
           </div>
-          <Progress value={currentMissionStats.fuelRemaining} className="h-2" />
-          <div className="flex justify-between text-xs font-mono-mission text-muted-foreground">
-            <span>0%</span>
-            <span>Reserve (20%)</span>
-            <span>100%</span>
-          </div>
+          <Progress value={currentMissionStats.fuelRemaining} className="h-1" />
         </div>
 
         {/* Current Status */}
-        <div className="grid grid-cols-2 gap-3 mt-4">
+        <div className="grid grid-cols-1 gap-2">
           <div className="bg-muted/30 rounded p-2">
-            <p className="text-xs font-mono-mission text-muted-foreground mb-1">Distance to Moon</p>
-            <p className="text-sm font-mono-mission text-primary">
+            <p className="text-xs font-mono-mission text-muted-foreground mb-1 truncate">Distance to Moon</p>
+            <p className="text-xs font-mono-mission text-primary">
               {currentMissionStats.distanceToMoon.toLocaleString()} km
             </p>
           </div>
           <div className="bg-muted/30 rounded p-2">
-            <p className="text-xs font-mono-mission text-muted-foreground mb-1">Current Velocity</p>
-            <p className="text-sm font-mono-mission text-primary">
+            <p className="text-xs font-mono-mission text-muted-foreground mb-1 truncate">Current Velocity</p>
+            <p className="text-xs font-mono-mission text-primary">
               {currentMissionStats.currentVelocity} km/s
             </p>
           </div>
         </div>
 
         {/* AI Recommendations */}
-        <div className="mt-4 p-3 bg-primary/10 border border-primary rounded">
-          <div className="flex items-center space-x-2 mb-2">
+        <div className="p-2 bg-primary/10 border border-primary rounded">
+          <div className="flex items-center space-x-2 mb-1">
             <div className="w-2 h-2 bg-primary rounded-full animate-pulse-glow" />
             <span className="text-xs font-mono-mission text-primary font-bold">
-              ODIN AI RECOMMENDATION
+              AI RECOMMENDATION
             </span>
           </div>
           <p className="text-xs text-foreground font-mono-mission">
-            Current trajectory optimal for mission parameters. Monitor solar activity for next 6 hours.
+            Current trajectory optimal. Monitor solar activity.
           </p>
         </div>
       </div>

@@ -1,46 +1,49 @@
-import { useState, useEffect, useRef } from 'react';
-import { Terminal, Info, AlertTriangle, AlertCircle } from 'lucide-react';
-import { missionLogs, type MissionLog } from '@/data/missionData';
-import { Card } from '@/components/ui/card';
+import { useState, useEffect, useRef } from "react";
+import { Terminal, Info, AlertTriangle, AlertCircle } from "lucide-react";
+import { missionLogs, type MissionLog } from "@/data/missionData";
+import { Card } from "@/components/ui/card";
 
 const priorityIcons = {
-  'Info': Info,
-  'Warning': AlertTriangle,
-  'Critical': AlertCircle
+  Info: Info,
+  Warning: AlertTriangle,
+  Critical: AlertCircle,
 };
 
 const priorityColors = {
-  'Info': 'text-primary',
-  'Warning': 'text-warning',
-  'Critical': 'text-destructive'
+  Info: "text-primary",
+  Warning: "text-warning",
+  Critical: "text-destructive",
 };
 
 const sourceColors = {
-  'ODIN-AI': 'text-primary',
-  'Flight Controller': 'text-accent',
-  'Navigation': 'text-warning',
-  'Hazard Detection': 'text-destructive'
+  "ODIN-AI": "text-primary",
+  "Flight Controller": "text-accent",
+  Navigation: "text-warning",
+  "Hazard Detection": "text-destructive",
 };
 
 interface MissionLogsProps {
-  newLogs?: MissionLog[];
+  logs?: MissionLog[];
 }
 
-export default function MissionLogs({ newLogs = [] }: MissionLogsProps) {
-  const [logs, setLogs] = useState<MissionLog[]>(missionLogs);
+export default function MissionLogs({ logs: propLogs = [] }: MissionLogsProps) {
+  const [logs, setLogs] = useState<MissionLog[]>([...missionLogs, ...propLogs]);
   const [autoScroll, setAutoScroll] = useState(true);
   const logsEndRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (newLogs.length > 0) {
-      setLogs(prev => [...prev, ...newLogs]);
-    }
-  }, [newLogs]);
+    // Replace all logs when prop changes
+    setLogs([...missionLogs, ...propLogs]);
+  }, [propLogs]);
 
   useEffect(() => {
     if (autoScroll && logsEndRef.current) {
-      logsEndRef.current.scrollIntoView({ behavior: 'smooth' });
+      logsEndRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+        inline: "nearest",
+      });
     }
   }, [logs, autoScroll]);
 
@@ -58,24 +61,24 @@ export default function MissionLogs({ newLogs = [] }: MissionLogsProps) {
 
   const generateAILog = () => {
     const aiMessages = [
-      'Analyzing optimal trajectory parameters for fuel efficiency.',
-      'Radiation shielding calculations updated based on solar activity.',
-      'Trajectory optimization complete. Recommending minor course correction.',
-      'Monitoring debris field. All clear for current flight path.',
-      'Fuel consumption within nominal parameters. Mission timeline on track.',
-      'AI co-pilot systems running optimal route calculations.',
-      'Space weather analysis indicates favorable conditions for next 48 hours.'
+      "Analyzing optimal trajectory parameters for fuel efficiency.",
+      "Radiation shielding calculations updated based on solar activity.",
+      "Trajectory optimization complete. Recommending minor course correction.",
+      "Monitoring debris field. All clear for current flight path.",
+      "Fuel consumption within nominal parameters. Mission timeline on track.",
+      "AI co-pilot systems running optimal route calculations.",
+      "Space weather analysis indicates favorable conditions for next 48 hours.",
     ];
 
     const newLog: MissionLog = {
       id: `ai-${Date.now()}`,
-      timestamp: new Date().toTimeString().split(' ')[0],
-      source: 'ODIN-AI',
+      timestamp: new Date().toTimeString().split(" ")[0],
+      source: "ODIN-AI",
       message: aiMessages[Math.floor(Math.random() * aiMessages.length)],
-      priority: 'Info'
+      priority: "Info",
     };
 
-    setLogs(prev => [...prev, newLog]);
+    setLogs((prev) => [...prev, newLog]);
   };
 
   return (
@@ -84,7 +87,9 @@ export default function MissionLogs({ newLogs = [] }: MissionLogsProps) {
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Terminal className="w-5 h-5 text-primary" />
-            <h2 className="text-lg font-bold text-foreground">AI CO-PILOT LOGS</h2>
+            <h2 className="text-lg font-bold text-foreground">
+              AI CO-PILOT LOGS
+            </h2>
           </div>
           <div className="flex items-center space-x-2">
             <button
@@ -103,7 +108,7 @@ export default function MissionLogs({ newLogs = [] }: MissionLogsProps) {
         </div>
       </div>
 
-      <div 
+      <div
         ref={containerRef}
         className="p-4 h-[calc(100%-80px)] overflow-y-auto space-y-2"
         onScroll={handleScroll}
@@ -122,15 +127,23 @@ export default function MissionLogs({ newLogs = [] }: MissionLogsProps) {
               <div
                 key={log.id}
                 className={`border-l-2 pl-3 py-2 ${
-                  log.priority === 'Critical' ? 'border-l-destructive bg-destructive/5' :
-                  log.priority === 'Warning' ? 'border-l-warning bg-warning/5' :
-                  'border-l-primary bg-primary/5'
+                  log.priority === "Critical"
+                    ? "border-l-destructive bg-destructive/5"
+                    : log.priority === "Warning"
+                    ? "border-l-warning bg-warning/5"
+                    : "border-l-primary bg-primary/5"
                 } rounded-r transition-all hover:bg-opacity-80`}
               >
                 <div className="flex items-start justify-between mb-1">
                   <div className="flex items-center space-x-2">
-                    <IconComponent className={`w-3 h-3 ${priorityColors[log.priority]}`} />
-                    <span className={`text-xs font-mono-mission font-bold ${sourceColors[log.source]}`}>
+                    <IconComponent
+                      className={`w-3 h-3 ${priorityColors[log.priority]}`}
+                    />
+                    <span
+                      className={`text-xs font-mono-mission font-bold ${
+                        sourceColors[log.source]
+                      }`}
+                    >
                       {log.source}
                     </span>
                   </div>
@@ -138,7 +151,7 @@ export default function MissionLogs({ newLogs = [] }: MissionLogsProps) {
                     {log.timestamp}
                   </span>
                 </div>
-                
+
                 <p className="text-sm text-foreground leading-relaxed font-mono-mission">
                   {log.message}
                 </p>
@@ -154,7 +167,11 @@ export default function MissionLogs({ newLogs = [] }: MissionLogsProps) {
           <button
             onClick={() => {
               setAutoScroll(true);
-              logsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+              logsEndRef.current?.scrollIntoView({
+                behavior: "smooth",
+                block: "nearest",
+                inline: "nearest",
+              });
             }}
             className="bg-primary text-primary-foreground rounded-full p-2 text-xs glow-primary"
           >

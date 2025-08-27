@@ -1,9 +1,18 @@
-import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Stars, Sphere, Line } from '@react-three/drei';
-import { useRef, useState } from 'react';
-import { useFrame } from '@react-three/fiber';
-import * as THREE from 'three';
-import { trajectories, type Trajectory } from '@/data/missionData';
+import { Canvas } from "@react-three/fiber";
+import { OrbitControls, Stars, Sphere, Line } from "@react-three/drei";
+import { useRef, useState } from "react";
+import { useFrame } from "@react-three/fiber";
+import { Maximize2 } from "lucide-react";
+import * as THREE from "three";
+import { trajectories, type Trajectory } from "@/data/missionData";
+import type { SimulationState } from "@/lib/simulationEngine";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 interface EarthProps {
   position: [number, number, number];
@@ -11,7 +20,7 @@ interface EarthProps {
 
 function Earth({ position }: EarthProps) {
   const earthRef = useRef<THREE.Mesh>(null);
-  
+
   useFrame((state, delta) => {
     if (earthRef.current) {
       earthRef.current.rotation.y += delta * 0.1;
@@ -24,12 +33,12 @@ function Earth({ position }: EarthProps) {
       <Sphere ref={earthRef} args={[2]} position={[0, 0, 0]}>
         <meshStandardMaterial color="#4A90E2" />
       </Sphere>
-      
+
       {/* Earth atmosphere glow */}
       <Sphere args={[2.2]} position={[0, 0, 0]}>
         <meshBasicMaterial color="#87CEEB" transparent opacity={0.3} />
       </Sphere>
-      
+
       {/* Earth label */}
       <mesh position={[0, -3, 0]}>
         <planeGeometry args={[2, 0.5]} />
@@ -45,7 +54,7 @@ interface MoonProps {
 
 function Moon({ position }: MoonProps) {
   const moonRef = useRef<THREE.Mesh>(null);
-  
+
   useFrame((state, delta) => {
     if (moonRef.current) {
       moonRef.current.rotation.y += delta * 0.05;
@@ -58,7 +67,7 @@ function Moon({ position }: MoonProps) {
       <Sphere ref={moonRef} args={[0.8]} position={[0, 0, 0]}>
         <meshStandardMaterial color="#C0C0C0" />
       </Sphere>
-      
+
       {/* Moon label */}
       <mesh position={[0, -1.5, 0]}>
         <planeGeometry args={[1.5, 0.3]} />
@@ -75,10 +84,11 @@ interface TrajectoryLineProps {
 }
 
 function TrajectoryLine({ trajectory, color, isActive }: TrajectoryLineProps) {
-  const points = trajectory.points.map(point => 
-    [point.x * 0.1, point.y * 0.1, point.z * 0.1] as [number, number, number]
+  const points = trajectory.points.map(
+    (point) =>
+      [point.x * 0.1, point.y * 0.1, point.z * 0.1] as [number, number, number]
   );
-  
+
   return (
     <Line
       points={points}
@@ -96,7 +106,7 @@ interface SpacecraftProps {
 
 function Spacecraft({ position }: SpacecraftProps) {
   const spacecraftRef = useRef<THREE.Group>(null);
-  
+
   useFrame((state, delta) => {
     if (spacecraftRef.current) {
       spacecraftRef.current.rotation.z += delta * 0.5;
@@ -110,7 +120,7 @@ function Spacecraft({ position }: SpacecraftProps) {
         <boxGeometry args={[0.3, 0.1, 0.1]} />
         <meshStandardMaterial color="#FFD700" />
       </mesh>
-      
+
       {/* Solar panels */}
       <mesh position={[0, 0.2, 0]}>
         <boxGeometry args={[0.1, 0.3, 0.05]} />
@@ -120,7 +130,7 @@ function Spacecraft({ position }: SpacecraftProps) {
         <boxGeometry args={[0.1, 0.3, 0.05]} />
         <meshStandardMaterial color="#4169E1" />
       </mesh>
-      
+
       {/* Thruster glow */}
       <mesh position={[-0.2, 0, 0]}>
         <sphereGeometry args={[0.05]} />
@@ -133,93 +143,229 @@ function Spacecraft({ position }: SpacecraftProps) {
 interface TrajectoryView3DProps {
   activeTrajectory: string;
   onTrajectorySelect?: (trajectoryId: string) => void;
+  simulationState?: SimulationState | null;
 }
 
-export default function TrajectoryView3D({ activeTrajectory, onTrajectorySelect }: TrajectoryView3DProps) {
+interface TrajectoryScene3DProps {
+  activeTrajectory: string;
+  onTrajectorySelect?: (trajectoryId: string) => void;
+  simulationState?: SimulationState | null;
+  showControls?: boolean;
+}
+
+function TrajectoryScene3D({
+  activeTrajectory,
+  onTrajectorySelect,
+  simulationState,
+  showControls = true,
+}: TrajectoryScene3DProps) {
   const [animationProgress, setAnimationProgress] = useState(0);
-  
-  const activeTrajectoryData = trajectories.find(t => t.id === activeTrajectory) || trajectories[0];
-  const spacecraftPosition = activeTrajectoryData.points[Math.floor(animationProgress * (activeTrajectoryData.points.length - 1))];
-  
+
+  const activeTrajectoryData =
+    trajectories.find((t) => t.id === activeTrajectory) || trajectories[0];
+
+  // Use simulation state for spacecraft position if available
+  let spacecraftPosition;
+  if (simulationState && simulationState.isRunning) {
+    spacecraftPosition = simulationState.currentPosition;
+  } else {
+    const currentPoint =
+      activeTrajectoryData.points[
+        Math.floor(animationProgress * (activeTrajectoryData.points.length - 1))
+      ];
+    spacecraftPosition = currentPoint;
+  }
+
+  // Calculate actual progress for display
+  const progress = simulationState?.isRunning
+    ? Math.min(simulationState.currentTime / activeTrajectoryData.travelTime, 1)
+    : animationProgress;
+
   return (
-    <div className="w-full h-full bg-gradient-cosmic relative">
+    <>
       <Canvas camera={{ position: [30, 20, 30], fov: 50 }}>
         {/* Lighting */}
         <ambientLight intensity={0.3} />
         <pointLight position={[0, 0, 0]} intensity={2} color="#FFE4B5" />
-        <directionalLight position={[10, 10, 5]} intensity={1} color="#FFFFFF" />
-        
+        <directionalLight
+          position={[10, 10, 5]}
+          intensity={1}
+          color="#FFFFFF"
+        />
+
         {/* Background stars */}
-        <Stars radius={300} depth={60} count={3000} factor={7} saturation={0.8} fade />
-        
+        <Stars
+          radius={300}
+          depth={60}
+          count={3000}
+          factor={7}
+          saturation={0.8}
+          fade
+        />
+
         {/* Earth-Moon system */}
         <Earth position={[0, 0, 0]} />
         <Moon position={[20, 6, 2]} />
-        
+
         {/* Trajectory lines */}
         {trajectories.map((trajectory) => (
           <TrajectoryLine
             key={trajectory.id}
             trajectory={trajectory}
             color={
-              trajectory.id === activeTrajectory ? '#00FFFF' :
-              trajectory.risk === 'Low' ? '#00FF00' :
-              trajectory.risk === 'High' ? '#FF4500' : '#FFFF00'
+              trajectory.id === activeTrajectory
+                ? "#00FFFF"
+                : trajectory.risk === "Low"
+                ? "#00FF00"
+                : trajectory.risk === "High"
+                ? "#FF4500"
+                : "#FFFF00"
             }
             isActive={trajectory.id === activeTrajectory}
           />
         ))}
-        
+
         {/* Spacecraft */}
-        <Spacecraft position={[
-          spacecraftPosition.x * 0.1,
-          spacecraftPosition.y * 0.1,
-          spacecraftPosition.z * 0.1
-        ]} />
-        
-        {/* Controls */}
-        <OrbitControls 
+        <Spacecraft
+          position={[
+            spacecraftPosition.x * 0.1,
+            spacecraftPosition.y * 0.1,
+            spacecraftPosition.z * 0.1,
+          ]}
+        />
+
+        {/* Camera controls */}
+        <OrbitControls
           enablePan={true}
           enableZoom={true}
           enableRotate={true}
+          maxDistance={100}
           minDistance={15}
-          maxDistance={80}
         />
       </Canvas>
-      
-      {/* 3D View overlay controls */}
-      <div className="absolute top-4 left-4 bg-card/80 backdrop-blur-sm border border-border rounded-lg p-3">
-        <h3 className="text-sm font-mono-mission text-primary mb-2">TRAJECTORY SELECTION</h3>
-        {trajectories.map((trajectory) => (
-          <button
-            key={trajectory.id}
-            onClick={() => onTrajectorySelect?.(trajectory.id)}
-            className={`block w-full text-left text-xs py-1 px-2 rounded mb-1 font-mono-mission transition-colors ${
-              trajectory.id === activeTrajectory 
-                ? 'bg-primary text-primary-foreground glow-primary' 
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-            }`}
-          >
-            {trajectory.name}
-          </button>
-        ))}
-      </div>
-      
-      {/* Animation progress */}
-      <div className="absolute bottom-4 left-4 right-4 bg-card/80 backdrop-blur-sm border border-border rounded-lg p-3">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-xs font-mono-mission text-muted-foreground">Mission Progress</span>
-          <span className="text-xs font-mono-mission text-primary">{Math.round(animationProgress * 100)}%</span>
-        </div>
-        <input
-          type="range"
-          min="0"
-          max="1"
-          step="0.01"
-          value={animationProgress}
-          onChange={(e) => setAnimationProgress(parseFloat(e.target.value))}
-          className="w-full h-1 bg-muted rounded-lg appearance-none cursor-pointer"
+
+      {/* Overlay controls */}
+      {showControls && (
+        <>
+          {/* 3D View overlay controls */}
+          <div className="absolute top-4 left-4 bg-card/80 backdrop-blur-sm border border-border rounded-lg p-3">
+            <h3 className="text-sm font-mono-mission text-primary mb-2">
+              TRAJECTORY SELECTION
+            </h3>
+            {trajectories.map((trajectory) => (
+              <button
+                key={trajectory.id}
+                onClick={() => onTrajectorySelect?.(trajectory.id)}
+                className={`block w-full text-left text-xs py-1 px-2 rounded mb-1 font-mono-mission transition-colors ${
+                  trajectory.id === activeTrajectory
+                    ? "bg-primary text-primary-foreground glow-primary"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                }`}
+              >
+                {trajectory.name}
+              </button>
+            ))}
+          </div>
+
+          {/* Mission Progress */}
+
+          <div className="absolute bottom-4 left-4 right-32 bg-card/80 backdrop-blur-sm border border-border rounded-lg p-3">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-mono-mission text-muted-foreground">
+                Mission Progress
+              </span>
+              <span className="text-xs font-mono-mission text-primary">
+                {Math.round(progress * 100)}%
+              </span>
+            </div>
+            {simulationState?.isRunning ? (
+              <div className="w-full h-1 bg-muted rounded-lg">
+                <div
+                  className="h-full bg-primary rounded-lg transition-all duration-300"
+                  style={{ width: `${progress * 100}%` }}
+                />
+              </div>
+            ) : (
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value={animationProgress}
+                onChange={(e) =>
+                  setAnimationProgress(parseFloat(e.target.value))
+                }
+                className="w-full h-1 bg-muted rounded-lg appearance-none cursor-pointer"
+              />
+            )}
+
+            {simulationState && (
+              <div className="mt-2 text-xs font-mono-mission text-muted-foreground">
+                <div>
+                  Time:{" "}
+                  <span className="text-primary">
+                    {simulationState.currentTime.toFixed(1)}h
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Current Phase */}
+          <div className="absolute py-7  bottom-4 right-4 bg-card/80 backdrop-blur-sm border border-border rounded-lg p-3">
+            <div className="text-xs font-mono-mission text-muted-foreground mb-1">
+              CURRENT PHASE
+            </div>
+            <div className="text-sm font-mono-mission text-primary">
+              {simulationState?.currentPhase || "STANDBY"}
+            </div>
+          </div>
+
+        </>
+      )}
+    </>
+  );
+}
+
+export default function TrajectoryView3D({
+  activeTrajectory,
+  onTrajectorySelect,
+  simulationState,
+}: TrajectoryView3DProps) {
+  return (
+    <div className="w-full h-full bg-gradient-cosmic relative">
+      {/* Main 3D Scene */}
+      <div className="absolute inset-0">
+        <TrajectoryScene3D
+          activeTrajectory={activeTrajectory}
+          onTrajectorySelect={onTrajectorySelect}
+          simulationState={simulationState}
+          showControls={true}
         />
+      </div>
+
+      {/* Expand Button */}
+      <div className="absolute top-4 right-4">
+        <Dialog>
+          <DialogTrigger asChild>
+            <button className="p-2 bg-card/80 backdrop-blur-sm border border-border rounded-lg text-primary hover:text-primary-foreground hover:bg-primary transition-colors">
+              <Maximize2 className="w-4 h-4" />
+            </button>
+          </DialogTrigger>
+          <DialogContent className="max-w-[95vw] max-h-[95vh] w-[90vw] h-[90vh] p-0">
+            <DialogHeader className="sr-only">
+              <DialogTitle>3D Trajectory View - Expanded</DialogTitle>
+            </DialogHeader>
+            <div className="w-full h-full bg-gradient-cosmic relative rounded-lg overflow-hidden">
+              <TrajectoryScene3D
+                activeTrajectory={activeTrajectory}
+                onTrajectorySelect={onTrajectorySelect}
+                simulationState={simulationState}
+                showControls={true}
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
